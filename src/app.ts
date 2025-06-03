@@ -1,241 +1,160 @@
-
 // index.ts
-interface IUser {
-  id: number;
-  name: string;
-  email: string;
-  phone_number:number;
-}
 
-interface ITask {
-  id: number;
+interface Book {
+  id: string;
   title: string;
   description: string;
-  assignedTo?: number;
+  image?: string;
+  isBorrowed: boolean;
 }
 
-class User implements IUser {
-  constructor(public id: number, public name: string, public email: string, public phone_number:number ) {}
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  borrowedBooks: string[];
 }
 
-class Task implements ITask {
-  constructor(
-    public id: number,
-    public title: string,
-    public description: string,
-    public assignedTo?: number
-  ) {}
-}
+const books: Book[] = JSON.parse(localStorage.getItem("books") || "[]");
+const members: Member[] = JSON.parse(localStorage.getItem("members") || "[]");
 
-class UserService {
-  private users: User[] = [];
-  private lastUserId: number = 0;
+document.addEventListener("DOMContentLoaded", () => {
+  const bookForm = document.getElementById("book-form") as HTMLFormElement;
+  const memberForm = document.getElementById("member-form") as HTMLFormElement;
+  const borrowForm = document.getElementById("borrow-form") as HTMLFormElement;
+  const returnForm = document.getElementById("return-form") as HTMLFormElement;
+  const transactionsPanel = document.getElementById("transactions-panel") as HTMLElement;
 
-  createUser(name: string, email: string, phone_number: number): User {
-    const newUser = new User(++this.lastUserId, name, email,phone_number);
-    this.users.push(newUser);
-    return newUser;
-  }
+  document.getElementById("toggle-transactions")?.addEventListener("click", () => {
+    transactionsPanel.style.display = transactionsPanel.style.display === "none" ? "block" : "none";
+    populateTransactionSelects();
+  });
 
-  getAllUsers(): User[] {
-    return this.users;
-  }
+  bookForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = (document.getElementById("book-title") as HTMLInputElement).value;
+    const description = (document.getElementById("book-description") as HTMLTextAreaElement).value;
+    const fileInput = document.getElementById("book-image") as HTMLInputElement;
+    const image = fileInput.files && fileInput.files[0] ? URL.createObjectURL(fileInput.files[0]) : "";
 
-  getUserById(id: number): User | undefined {
-    return this.users.find(user => user.id === id);
-  }
+    const book: Book = {
+      id: crypto.randomUUID(),
+      title,
+      description,
+      image,
+      isBorrowed: false,
+    };
 
-  deleteUser(id: number): void {
-    const index = this.users.findIndex(user => user.id === id);
-    if (index !== -1) {
-      this.users.splice(index, 1);
+    books.push(book);
+    saveToStorage("books", books);
+    renderBooks();
+    bookForm.reset();
+  });
+
+  memberForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = (document.getElementById("member-name") as HTMLInputElement).value;
+    const email = (document.getElementById("member-email") as HTMLInputElement).value;
+    const phone = (document.getElementById("member-phone") as HTMLInputElement).value;
+
+    const member: Member = {
+      id: crypto.randomUUID(),
+      name,
+      email,
+      phone,
+      borrowedBooks: []
+    };
+
+    members.push(member);
+    saveToStorage("members", members);
+    renderMembers();
+    memberForm.reset();
+  });
+
+  borrowForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const memberId = (document.getElementById("borrow-member") as HTMLSelectElement).value;
+    const bookId = (document.getElementById("borrow-book") as HTMLSelectElement).value;
+
+    const member = members.find(m => m.id === memberId);
+    const book = books.find(b => b.id === bookId);
+
+    if (book && member && !book.isBorrowed) {
+      book.isBorrowed = true;
+      member.borrowedBooks.push(bookId);
+      saveToStorage("books", books);
+      saveToStorage("members", members);
+      renderBooks();
     }
-  }
+  });
+
+  returnForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const memberId = (document.getElementById("return-member") as HTMLSelectElement).value;
+    const bookId = (document.getElementById("return-book") as HTMLSelectElement).value;
+
+    const member = members.find(m => m.id === memberId);
+    const book = books.find(b => b.id === bookId);
+
+    if (book && member && book.isBorrowed) {
+      book.isBorrowed = false;
+      member.borrowedBooks = member.borrowedBooks.filter(id => id !== bookId);
+      saveToStorage("books", books);
+      saveToStorage("members", members);
+      renderBooks();
+    }
+  });
+
+  renderBooks();
+  renderMembers();
+});
+
+function saveToStorage(key: string, data: any) {
+  localStorage.setItem(key, JSON.stringify(data));
 }
 
-class TaskService {
-  private tasks: Task[] = [];
-  private lastTaskId: number = 0;
-  constructor(private userService: UserService) {}
-
-  createTask(title: string, description: string): Task {
-    const newTask = new Task(++this.lastTaskId, title, description);
-    this.tasks.push(newTask);
-    return newTask;
-  }
-
-  getAllTasks(): Task[] {
-    return this.tasks;
-  }
-
-  assignTask(taskId: number, userId: number): boolean {
-    const task = this.tasks.find(t => t.id === taskId);
-    const user = this.userService.getUserById(userId);
-    if (task && user) {
-      task.assignedTo = userId;
-      return true;
-    }
-    return false;
-  }
-
-  unassignTask(taskId: number): boolean {
-    const task = this.tasks.find(t => t.id === taskId);
-    if (!task) return false;
-    task.assignedTo = undefined;
-    return true;
-  }
-
-  deleteTask(id: number): void {
-    const index = this.tasks.findIndex(task => task.id === id);
-    if (index !== -1) {
-      this.tasks.splice(index, 1);
-    }
-  }
+function renderBooks() {
+  const list = document.getElementById("book-list") as HTMLElement;
+  list.innerHTML = books.map(book => `
+    <div>
+      <strong>${book.title}</strong> - ${book.description} ${book.isBorrowed ? '(Borrowed)' : ''}
+    </div>
+  `).join("");
 }
 
+function renderMembers() {
+  const list = document.getElementById("member-list") as HTMLElement;
+  list.innerHTML = members.map(member => `
+    <div>
+      <strong>${member.name}</strong> (${member.email})
+    </div>
+  `).join("");
+}
 
-const userService = new UserService();
-const taskService = new TaskService(userService);
+function populateTransactionSelects() {
+  const borrowMember = document.getElementById("borrow-member") as HTMLSelectElement;
+  const borrowBook = document.getElementById("borrow-book") as HTMLSelectElement;
+  const returnMember = document.getElementById("return-member") as HTMLSelectElement;
+  const returnBook = document.getElementById("return-book") as HTMLSelectElement;
 
+  borrowMember.innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join("");
+  borrowBook.innerHTML = books.filter(b => !b.isBorrowed).map(b => `<option value="${b.id}">${b.title}</option>`).join("");
+  returnMember.innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join("");
 
+  const selectedReturnMemberId = returnMember.value;
+  const selectedMember = members.find(m => m.id === selectedReturnMemberId);
+  returnBook.innerHTML = selectedMember?.borrowedBooks.map(id => {
+    const book = books.find(b => b.id === id);
+    return book ? `<option value="${book.id}">${book.title}</option>` : "";
+  }).join("") || "";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const userBtn = document.getElementById("user-btn") as HTMLButtonElement;
-// const userNameInput = document.getElementById("username") as HTMLInputElement;
-// const userEmailInput = document.getElementById("user-email") as HTMLInputElement;
-// const userList = document.querySelector(".user-list") as HTMLDivElement;
-
-// const taskBtn = document.getElementById("add-task") as HTMLButtonElement;
-// const taskTitleInput = document.getElementById("task-title") as HTMLInputElement;
-// const taskDescInput = document.getElementById("description") as HTMLTextAreaElement;
-// const tasksList = document.getElementById("tasksList") as HTMLDivElement;
-
-// const assignTaskBtn = document.getElementById("assignTaskBtn") as HTMLButtonElement;
-// const assignUserIdInput = document.getElementById("assign-task") as HTMLInputElement;
-// const unassignTaskBtn = document.getElementById("unassign-task") as HTMLButtonElement;
-
-// userBtn.addEventListener("click", () => {
-//   const name = userNameInput.value.trim();
-//   const email = userEmailInput.value.trim();
-//   if (!name || !email) return alert("Please fill in all fields.");
-//   userService.createUser(name, email,phone_numer);
-//   showUsers();
-//   userNameInput.value = "";
-//   userEmailInput.value = "";
-//   userPhone_number.value="";
-// });
-
-// function showUsers() {
-//   userList.innerHTML = "";
-//   userService.getAllUsers().forEach(user => {
-//     const div = document.createElement("div");
-//     div.className = "user-item";
-//     div.innerHTML = `
-//     <span class="user-id">ID: ${user.id}</span>
-//       <span class="user-name">${user.name}</span>
-//       <span class="user-email">${user.email}</span>
-//        <button class="delete-user-btn" data-id="${user.id}">Delete</button>
-//        <button class="update-user-btn" data-id="${user.id}">Upadate</button>
-      
-//     `;
-//     userList.appendChild(div);
-//   });
-
-//     document.querySelectorAll('.delete-user-btn').forEach(button => {
-//     button.addEventListener('click', (e) => {
-//       const userId = parseInt((e.target as HTMLElement).getAttribute('data-id') || '0');
-//       userService.deleteUser(userId);
-//       showUsers(); 
-//     });
-//   });
-
-
-// }
-
-
-
-
-
-// taskBtn.addEventListener("click", () => {
-//   const title = taskTitleInput.value.trim();
-//   const description = taskDescInput.value.trim();
-//   if (!title || !description) return alert("Please enter title and description.");
-//   taskService.createTask(title, description);
-//   showTasks();
-//   taskTitleInput.value = "";
-//   taskDescInput.value = "";
-// });
-
-// function showTasks() {
-//   tasksList.innerHTML = "";
-//   taskService.getAllTasks().forEach(task => {
-//     const div = document.createElement("div");
-//     div.className = "task-item";
-//     div.innerHTML = `
-//       <span class="task-title">${task.title}</span>
-//       <span class="task-desc">${task.description}</span>
-//       <span class="assigned-to">Assigned To: ${task.assignedTo || "None"}</span>
-//        <button class="delete-task-btn" data-id="${task.id}">Delete </button>
-//        <button class="upadate-task-btn" data-id="${task.id}">Update</button>
-//     `;
-//     tasksList.appendChild(div);
-//   });
-
-//    document.querySelectorAll('.delete-task-btn').forEach(button => {
-//     button.addEventListener('click', (e) => {
-//       const taskId = parseInt((e.target as HTMLElement).getAttribute('data-id') || '0');
-//       taskService.deleteTask(taskId);
-//       showTasks(); 
-//     });
-//   });
-
-
-// }
-
-// assignTaskBtn.addEventListener("click", () => {
-//   const userId = parseInt(assignUserIdInput.value);
-//   const tasks = taskService.getAllTasks();
-//   if (!tasks.length) return alert("No tasks available.");
-//   const lastTask = tasks[tasks.length - 1];
-//   if (taskService.assignTask(lastTask.id, userId)) {
-//     showTasks();
-//   } else {
-//     alert("Failed to assign task. Check user ID.");
-//   }
-//   assignUserIdInput.value = "";
-// });
-
-// unassignTaskBtn.addEventListener("click", () => {
-//   const tasks = taskService.getAllTasks();
-//   if (!tasks.length) return alert("No tasks available.");
-//   const lastTask = tasks[tasks.length - 1];
-//   if (taskService.unassignTask(lastTask.id)) {
-//     showTasks();
-//   } else {
-//     alert("Failed to unassign task.");
-//   }
-// });
+  returnMember.addEventListener("change", () => {
+    const memberId = returnMember.value;
+    const member = members.find(m => m.id === memberId);
+    returnBook.innerHTML = member?.borrowedBooks.map(id => {
+      const book = books.find(b => b.id === id);
+      return book ? `<option value="${book.id}">${book.title}</option>` : "";
+    }).join("") || "";
+  });
+}

@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Library Manager</title>
-  <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;600;800&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management System</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;600;800&display=swap" rel="stylesheet" />
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 </head>
+
 <body>
   <div class="main">
     <header>
       <h2>Library Manager</h2>
       <div class="icons">
+        <button id="toggle-transactions">Transactions</button>
         <ion-icon name="notifications-outline"></ion-icon>
         <ion-icon name="apps-outline"></ion-icon>
       </div>
@@ -25,15 +28,13 @@
           <label>Add a New Book:</label>
         </div>
         <form class="form" id="book-form">
-          <input type="text" placeholder="Enter book title" required />
-          <textarea placeholder="Enter book description" required></textarea>
-          <input type="file" accept="image/*" />
-          <button type="submit">Submit</button>
+          <input type="text" id="book-title" placeholder="Enter book title" required />
+          <textarea id="book-description" placeholder="Enter book description" required></textarea>
+          <input type="file" id="book-image" accept="image/*" />
+          <button type="submit">Add Book</button>
         </form>
-
-        <div class="list" id="book-list">
-         
-        </div>
+        <h3>Books</h3>
+        <div id="book-list" class="list"></div>
       </section>
 
       <section class="members">
@@ -41,16 +42,31 @@
           <label>Add a New Member:</label>
         </div>
         <form class="form" id="member-form">
-          <input type="text" placeholder="Enter member name" required />
-          <input type="email" placeholder="Enter member email" required />
-          <input type="text" placeholder="Enter member phone number" required />
-          <button type="submit">Submit</button>
+          <input type="text" id="member-name" placeholder="Enter member name" required />
+          <input type="email" id="member-email" placeholder="Enter member email" required />
+          <input type="tel" id="member-phone" placeholder="Enter member phone number" required />
+          <button type="submit">Add Member</button>
         </form>
-        <div class="list" id="member-list">
-         
-        </div>
+        <h3>Members</h3>
+        <div id="member-list" class="list"></div>
+      </section>
+
+      <section class="transactions" id="transactions-panel" style="display: none;">
+        <h2>Borrow / Return Book</h2>
+        <form id="borrow-form" class="form">
+          <select id="borrow-member" required></select>
+          <select id="borrow-book" required></select>
+          <button type="submit">Borrow Book</button>
+        </form>
+        <form id="return-form" class="form">
+          <select id="return-member" required></select>
+          <select id="return-book" required></select>
+          <button type="submit">Return Book</button>
+        </form>
       </section>
     </div>
   </div>
+  <script src="./dist/app.js" defer></script>
 </body>
+
 </html>

@@ -1,135 +1,102 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;600;800&display=swap');
-
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  font-family: "Nunito", sans-serif;
+  font-family: 'Nunito', sans-serif;
 }
 
 body {
-  display: flex;
-  justify-content: center;
-  background-color: #f5f5f5;
+  background: #f4f6f8;
+  color: #333;
   padding: 20px;
 }
 
 .main {
-  width: 100%;
   max-width: 1000px;
-  background-color: #ffffff;
+  margin: auto;
+  background: white;
+  padding: 20px;
   border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 header {
-  background-color: #4a6fa5;
-  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  margin-bottom: 30px;
+}
+
+header h2 {
+  font-weight: 800;
 }
 
 .icons {
-  font-size: 28px;
   display: flex;
-  gap: 15px;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-  padding: 20px;
-}
-
-section {
-  border: 1px solid #ccc;
-  padding: 20px;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-}
-
-.section-header label {
-  font-weight: bold;
-  font-size: 18px;
+  gap: 10px;
 }
 
 button {
-  padding: 10px 20px;
-  background-color: #4a6fa5;
+  padding: 10px 15px;
+  background: #0077cc;
   color: white;
   border: none;
-  border-radius: 5px;
-  font-size: 16px;
+  border-radius: 8px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #3a5a8f;
+  background: #005fa3;
+}
+
+.section-header {
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
-.form input,
-.form textarea {
+input, textarea, select {
   padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-}
-
-.form textarea {
-  resize: vertical;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
-.card {
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+.list-item {
+  background: #eef2f5;
+  padding: 10px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.card p {
-  margin-bottom: 8px;
-  font-size: 16px;
+.list-item img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  margin-right: 10px;
+  border-radius: 4px;
 }
 
-.card button {
-  background-color: #e74c3c;
+.transactions {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #ccc;
 }
 
-.card button:hover {
-  background-color: #c0392b;
-}
-
-@media (max-width: 768px) {
-  .content {
-    flex-direction: column;
-  }
+.transactions h2 {
+  margin-bottom: 15px;
 }
