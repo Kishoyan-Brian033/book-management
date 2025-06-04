@@ -66,12 +66,14 @@ input, textarea, select {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  font-size: 18px;
 }
 
 .list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  font-size: 18px;
 }
 
 .list-item {

@@ -1,5 +1,3 @@
-// index.ts
-
 interface Book {
   id: string;
   title: string;
@@ -16,8 +14,8 @@ interface Member {
   borrowedBooks: string[];
 }
 
-const books: Book[] = JSON.parse(localStorage.getItem("books") || "[]");
-const members: Member[] = JSON.parse(localStorage.getItem("members") || "[]");
+let books: Book[] = JSON.parse(localStorage.getItem("books") || "[]");
+let members: Member[] = JSON.parse(localStorage.getItem("members") || "[]");
 
 document.addEventListener("DOMContentLoaded", () => {
   const bookForm = document.getElementById("book-form") as HTMLFormElement;
@@ -28,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("toggle-transactions")?.addEventListener("click", () => {
     transactionsPanel.style.display = transactionsPanel.style.display === "none" ? "block" : "none";
-    populateTransactionSelects();
+    displaytransactions();
   });
 
   bookForm.addEventListener("submit", (e) => {
@@ -48,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     books.push(book);
     saveToStorage("books", books);
-    renderBooks();
+    dispalybooks();
     bookForm.reset();
   });
 
@@ -68,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     members.push(member);
     saveToStorage("members", members);
-    renderMembers();
+    displaymembers();
     memberForm.reset();
   });
 
@@ -85,7 +83,8 @@ document.addEventListener("DOMContentLoaded", () => {
       member.borrowedBooks.push(bookId);
       saveToStorage("books", books);
       saveToStorage("members", members);
-      renderBooks();
+      dispalybooks();
+      displaytransactions();
     }
   });
 
@@ -102,37 +101,119 @@ document.addEventListener("DOMContentLoaded", () => {
       member.borrowedBooks = member.borrowedBooks.filter(id => id !== bookId);
       saveToStorage("books", books);
       saveToStorage("members", members);
-      renderBooks();
+      dispalybooks();
+      displaytransactions();
     }
   });
 
-  renderBooks();
-  renderMembers();
+  dispalybooks();
+  displaymembers();
+  displaytransactions();
 });
 
 function saveToStorage(key: string, data: any) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-function renderBooks() {
+function dispalybooks() {
   const list = document.getElementById("book-list") as HTMLElement;
   list.innerHTML = books.map(book => `
-    <div>
+    <div data-id="${book.id}">
       <strong>${book.title}</strong> - ${book.description} ${book.isBorrowed ? '(Borrowed)' : ''}
+      <button class="delete-btn">Delete</button>
+      <button class="edit-btn">Edit</button>
     </div>
   `).join("");
+
+  // DELETE Book
+  list.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
+      const book = books.find(b => b.id === id);
+      if (book?.isBorrowed) {
+        alert("Cannot delete a borrowed book.");
+        return;
+      }
+      const index = books.findIndex(b => b.id === id);
+      if (index !== -1) {
+        books.splice(index, 1);
+        saveToStorage("books", books);
+        dispalybooks();
+        displaytransactions();
+      }
+    });
+  });
+
+  // EDIT Book
+  list.querySelectorAll(".edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
+      const book = books.find(b => b.id === id);
+      if (!book) return;
+      const title = prompt("Enter new title:", book.title);
+      const description = prompt("Enter new description:", book.description);
+      if (title && description) {
+        book.title = title;
+        book.description = description;
+        saveToStorage("books", books);
+        dispalybooks();
+        displaytransactions();
+      }
+    });
+  });
 }
 
-function renderMembers() {
+function displaymembers() {
   const list = document.getElementById("member-list") as HTMLElement;
   list.innerHTML = members.map(member => `
-    <div>
+    <div data-id="${member.id}">
       <strong>${member.name}</strong> (${member.email})
+      <button class="delete-btn">Delete</button>
+      <button class="edit-btn">Edit</button>
     </div>
   `).join("");
+
+  // DELETE Member
+  list.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
+      const member = members.find(m => m.id === id);
+      if (member?.borrowedBooks.length) {
+        alert("Cannot delete member with borrowed books.");
+        return;
+      }
+      const index = members.findIndex(m => m.id === id);
+      if (index !== -1) {
+        members.splice(index, 1);
+        saveToStorage("members", members);
+        displaymembers();
+        displaytransactions();
+      }
+    });
+  });
+
+  // EDIT Member
+  list.querySelectorAll(".edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
+      const member = members.find(m => m.id === id);
+      if (!member) return;
+      const name = prompt("Enter new name:", member.name);
+      const email = prompt("Enter new email:", member.email);
+      const phone = prompt("Enter new phone:", member.phone);
+      if (name && email && phone) {
+        member.name = name;
+        member.email = email;
+        member.phone = phone;
+        saveToStorage("members", members);
+        displaymembers();
+        displaytransactions();
+      }
+    });
+  });
 }
 
-function populateTransactionSelects() {
+function displaytransactions() {
   const borrowMember = document.getElementById("borrow-member") as HTMLSelectElement;
   const borrowBook = document.getElementById("borrow-book") as HTMLSelectElement;
   const returnMember = document.getElementById("return-member") as HTMLSelectElement;
@@ -142,19 +223,17 @@ function populateTransactionSelects() {
   borrowBook.innerHTML = books.filter(b => !b.isBorrowed).map(b => `<option value="${b.id}">${b.title}</option>`).join("");
   returnMember.innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join("");
 
-  const selectedReturnMemberId = returnMember.value;
-  const selectedMember = members.find(m => m.id === selectedReturnMemberId);
-  returnBook.innerHTML = selectedMember?.borrowedBooks.map(id => {
-    const book = books.find(b => b.id === id);
-    return book ? `<option value="${book.id}">${book.title}</option>` : "";
-  }).join("") || "";
+  updateReturnBooks(returnMember.value);
 
   returnMember.addEventListener("change", () => {
-    const memberId = returnMember.value;
+    updateReturnBooks(returnMember.value);
+  });
+
+  function updateReturnBooks(memberId: string) {
     const member = members.find(m => m.id === memberId);
     returnBook.innerHTML = member?.borrowedBooks.map(id => {
       const book = books.find(b => b.id === id);
       return book ? `<option value="${book.id}">${book.title}</option>` : "";
     }).join("") || "";
-  });
+  }
 }
