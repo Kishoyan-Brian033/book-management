@@ -35,16 +35,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const description = (document.getElementById("book-description") as HTMLTextAreaElement).value;
     const fileInput = document.getElementById("book-image") as HTMLInputElement;
     const image = fileInput.files && fileInput.files[0] ? URL.createObjectURL(fileInput.files[0]) : "";
+    const editId = bookForm.getAttribute("data-editing-id");
 
-    const book: Book = {
-      id: crypto.randomUUID(),
-      title,
-      description,
-      image,
-      isBorrowed: false,
-    };
+    if (editId) {
+      const book = books.find(b => b.id === editId);
+      if (book) {
+        book.title = title;
+        book.description = description;
+        bookForm.removeAttribute("data-editing-id");
+      }
+    } else {
+      const book: Book = {
+        id: crypto.randomUUID(),
+        title,
+        description,
+        image,
+        isBorrowed: false,
+      };
+      books.push(book);
+    }
 
-    books.push(book);
     saveToStorage("books", books);
     dispalybooks();
     bookForm.reset();
@@ -55,16 +65,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const name = (document.getElementById("member-name") as HTMLInputElement).value;
     const email = (document.getElementById("member-email") as HTMLInputElement).value;
     const phone = (document.getElementById("member-phone") as HTMLInputElement).value;
+    const editId = memberForm.getAttribute("data-editing-id");
 
-    const member: Member = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      phone,
-      borrowedBooks: []
-    };
+    if (editId) {
+      const member = members.find(m => m.id === editId);
+      if (member) {
+        member.name = name;
+        member.email = email;
+        member.phone = phone;
+        memberForm.removeAttribute("data-editing-id");
+      }
+    } else {
+      const member: Member = {
+        id: crypto.randomUUID(),
+        name,
+        email,
+        phone,
+        borrowedBooks: []
+      };
+      members.push(member);
+    }
 
-    members.push(member);
     saveToStorage("members", members);
     displaymembers();
     memberForm.reset();
@@ -115,6 +136,25 @@ function saveToStorage(key: string, data: any) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
+function editBook(id: string) {
+  const book = books.find(b => b.id === id);
+  if (!book) return;
+  (document.getElementById("book-title") as HTMLInputElement).value = book.title;
+  (document.getElementById("book-description") as HTMLTextAreaElement).value = book.description;
+  const form = document.getElementById("book-form") as HTMLFormElement;
+  form.setAttribute("data-editing-id", id);
+}
+
+function editMember(id: string) {
+  const member = members.find(m => m.id === id);
+  if (!member) return;
+  (document.getElementById("member-name") as HTMLInputElement).value = member.name;
+  (document.getElementById("member-email") as HTMLInputElement).value = member.email;
+  (document.getElementById("member-phone") as HTMLInputElement).value = member.phone;
+  const form = document.getElementById("member-form") as HTMLFormElement;
+  form.setAttribute("data-editing-id", id);
+}
+
 function dispalybooks() {
   const list = document.getElementById("book-list") as HTMLElement;
   list.innerHTML = books.map(book => `
@@ -125,40 +165,25 @@ function dispalybooks() {
     </div>
   `).join("");
 
-  // DELETE Book
   list.querySelectorAll(".delete-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id")!;
       const book = books.find(b => b.id === id);
       if (book?.isBorrowed) {
         alert("Cannot delete a borrowed book.");
         return;
       }
-      const index = books.findIndex(b => b.id === id);
-      if (index !== -1) {
-        books.splice(index, 1);
-        saveToStorage("books", books);
-        dispalybooks();
-        displaytransactions();
-      }
+      books = books.filter(b => b.id !== id);
+      saveToStorage("books", books);
+      dispalybooks();
+      displaytransactions();
     });
   });
 
-  // EDIT Book
   list.querySelectorAll(".edit-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
-      const book = books.find(b => b.id === id);
-      if (!book) return;
-      const title = prompt("Enter new title:", book.title);
-      const description = prompt("Enter new description:", book.description);
-      if (title && description) {
-        book.title = title;
-        book.description = description;
-        saveToStorage("books", books);
-        dispalybooks();
-        displaytransactions();
-      }
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id")!;
+      editBook(id);
     });
   });
 }
@@ -173,42 +198,25 @@ function displaymembers() {
     </div>
   `).join("");
 
-  // DELETE Member
   list.querySelectorAll(".delete-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id")!;
       const member = members.find(m => m.id === id);
       if (member?.borrowedBooks.length) {
         alert("Cannot delete member with borrowed books.");
         return;
       }
-      const index = members.findIndex(m => m.id === id);
-      if (index !== -1) {
-        members.splice(index, 1);
-        saveToStorage("members", members);
-        displaymembers();
-        displaytransactions();
-      }
+      members = members.filter(m => m.id !== id);
+      saveToStorage("members", members);
+      displaymembers();
+      displaytransactions();
     });
   });
 
-  // EDIT Member
   list.querySelectorAll(".edit-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = (btn.parentElement as HTMLElement).getAttribute("data-id");
-      const member = members.find(m => m.id === id);
-      if (!member) return;
-      const name = prompt("Enter new name:", member.name);
-      const email = prompt("Enter new email:", member.email);
-      const phone = prompt("Enter new phone:", member.phone);
-      if (name && email && phone) {
-        member.name = name;
-        member.email = email;
-        member.phone = phone;
-        saveToStorage("members", members);
-        displaymembers();
-        displaytransactions();
-      }
+      const id = (btn.parentElement as HTMLElement).getAttribute("data-id")!;
+      editMember(id);
     });
   });
 }
